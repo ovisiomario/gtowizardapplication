@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MTT Variance Lab</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <div class="header__brand">
+        <span class="header__logo">♠</span>
+        <div>
+          <h1>MTT Variance Lab</h1>
+          <p class="header__sub">Understand variance before you pick your schedule</p>
+        </div>
+      </div>
+      <div class="intro">
+        <p>
+          In MTTs, <strong>being profitable doesn't mean making money right away</strong>.
+          Variance is massive — even with a positive edge, you can run hundreds of tournaments
+          in the red before your EV shows up in your balance.
+        </p>
+        <ul class="intro__list">
+          <li><strong>Volume and sample size</strong> — you need a large number of tournaments for results to converge toward your true ROI.</li>
+          <li><strong>Bankroll and timeframe</strong> — tournament selection depends on how much you have and when you need to cash out.</li>
+          <li><strong>Smaller fields = more predictable</strong> — fewer players means shorter swings; large fields require a bigger roll and more time.</li>
+        </ul>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="panel panel--controls">
+        <h2>Select tournament</h2>
+        <p class="panel-hint">Compare real GGPoker formats (freezeouts, non-PKO) and see the impact on your bankroll.</p>
+
+        <div class="search">
+          <input
+            type="search"
+            id="search"
+            placeholder="Search GGMasters, buy-in, turbo…"
+            autocomplete="off"
+          />
+        </div>
+
+        <ul class="tournament-list" id="tournamentList"></ul>
+
+        <div class="tournament-detail" id="tournamentDetail"></div>
+
+        <div class="field-group-row">
+        <div class="field-group">
+          <h3>Your edge</h3>
+          <div class="field">
+            <label for="roi">
+              Estimated ROI (after fees)
+              <span class="field__value" id="roiVal">20%</span>
+            </label>
+            <div id="roiSliderWrap" class="roi-slider-wrap">
+              <input type="range" id="roi" min="-30" max="50" step="1" value="20" />
+              <p class="field__hint">Slide left for losing ROI (red). Winning regs usually sit between 5–30%.</p>
+            </div>
+            <div id="roiManualWrap" class="roi-manual" hidden>
+              <label for="roiManual" class="roi-manual__label">ROI above 50%?</label>
+              <div class="roi-manual__row">
+                <input type="number" id="roiManual" min="51" max="200" step="1" value="55" />
+                <span class="roi-manual__suffix">%</span>
+              </div>
+              <button type="button" class="field-link" id="roiBackToSlider">← Back to slider</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="field-group">
+          <h3>Simulation</h3>
+          <div class="field">
+            <label for="tournaments">
+              Volume — how many you'll play
+              <span class="field__value" id="tournamentsVal">200</span>
+            </label>
+            <input type="range" id="tournaments" min="50" max="1000" step="10" value="200" />
+            <p class="field__hint" id="tournamentsHint">Simulates playing 200 of this tournament in a row — sets total EV, downswing risk, and the chart timeline.</p>
+          </div>
+          <div class="field">
+            <label for="bankroll">
+              Starting bankroll
+              <span class="field__value" id="bankrollVal">$15,000</span>
+            </label>
+            <div id="bankrollSliderWrap">
+              <input type="range" id="bankroll" min="500" max="50000" step="500" value="15000" />
+              <p class="field__hint" id="bankrollHint">$500 steps · slide to $50,000 for higher amounts</p>
+            </div>
+            <div id="bankrollManualWrap" class="roi-manual" hidden>
+              <label for="bankrollManual" class="roi-manual__label">Bankroll above $50,000?</label>
+              <div class="roi-manual__row">
+                <span class="roi-manual__prefix">$</span>
+                <input type="number" id="bankrollManual" min="50500" max="500000" step="500" value="60000" />
+              </div>
+              <button type="button" class="field-link" id="bankrollBackToSlider">← Back to slider</button>
+            </div>
+          </div>
+        </div>
+        </div>
+
+        <details class="payout-preview">
+          <summary>Payout structure</summary>
+          <div id="payoutPreview"></div>
+        </details>
+
+        <a href="#results" class="scroll-cta">View simulation results ↓</a>
+      </section>
+
+      <div class="section-divider" id="results">
+        <h2>Simulation results</h2>
+        <p>Based on 5,000 Monte Carlo runs with your settings above.</p>
+      </div>
+
+      <section class="panel panel--results">
+        <div class="stats" id="stats">
+          <div class="stat">
+            <span class="stat__label">Still down after sample</span>
+            <span class="stat__hint">Runs that lost money</span>
+            <span class="stat__value" id="statDown">—</span>
+          </div>
+          <div class="stat">
+            <span class="stat__label">Expected EV</span>
+            <span class="stat__hint">Average if you ran this forever</span>
+            <span class="stat__value" id="statEV">—</span>
+          </div>
+          <div class="stat">
+            <span class="stat__label">Risk of ruin</span>
+            <span class="stat__hint">Chance of going broke</span>
+            <span class="stat__value" id="statRuin">—</span>
+          </div>
+          <div class="stat">
+            <span class="stat__label">Min bankroll (&lt;5% RoR)</span>
+            <span class="stat__hint">Recommended roll for this sample</span>
+            <span class="stat__value" id="statMinBR">—</span>
+          </div>
+        </div>
+
+        <p class="insight" id="insight">Select a tournament to run the simulation.</p>
+
+        <div class="results-breakdown" id="resultsBreakdown"></div>
+
+        <div class="chart-block">
+          <h3>Profit over time</h3>
+          <p class="chart-desc" id="chartDesc">Shaded area = where 70% of runs land. Dotted line = expected EV. Solid yellow = median path.</p>
+          <div class="chart-wrap">
+            <canvas id="pathsChart"></canvas>
+          </div>
+        </div>
+
+        <details class="methodology">
+          <summary>How this works</summary>
+          <p>
+            Monte Carlo simulation using real GGPoker payout structures (freezeouts, non-PKO).
+            Each tournament uses published buy-in, fee, and typical field size. Payouts follow
+            standard online ladders (~12–15% ITM, top-heavy).
+          </p>
+          <p>
+            The simulator adjusts finish-position odds for your ROI and runs 5,000 scenarios.
+            <strong>Being +EV doesn't guarantee profit over a short sample</strong> — especially
+            in 5,000+ player fields where one deep run changes everything.
+          </p>
+          <p>
+            Rule of thumb: small bankroll or short timeframe → smaller fields and lower buy-ins.
+            Large roll and long horizon → you can absorb the variance of the majors.
+          </p>
+        </details>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p>
+        Built by Mario as part of an application for the
+        <strong>GTO Wizard Product Manager</strong> role — to show I understand poker,
+        product thinking, and building fast with AI tools.
+      </p>
+      <p class="footer__signoff">Hope you enjoy it.</p>
+    </footer>
+  </div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
